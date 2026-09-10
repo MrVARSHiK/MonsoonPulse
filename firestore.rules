@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // User accounts and role documents
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Agronomic advisory records
+    match /advisories/{advisoryId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

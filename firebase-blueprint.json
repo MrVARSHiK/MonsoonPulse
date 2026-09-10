@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "users": {
+      "title": "User",
+      "description": "User profile with role-based dashboard permissions",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { 
+          "type": "string", 
+          "enum": ["farmer", "officer", "scientist", "general"],
+          "description": "User role. If farmer, access is restricted exclusively to Crop Advisory Engine"
+        },
+        "state": { "type": "string" },
+        "districtId": { "type": "string" },
+        "preferredLanguage": { "type": "string" },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastLoginAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "advisories": {
+      "title": "AdvisoryLog",
+      "description": "Saved agronomic advisories and personalized alerts",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "districtId": { "type": "string" },
+        "state": { "type": "string" },
+        "cropName": { "type": "string" },
+        "sowingVerdict": { "type": "string" },
+        "summary": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "cropName"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "entity": "users",
+      "rules": {
+        "read": "request.auth != null",
+        "write": "request.auth != null && request.auth.uid == uid"
+      }
+    },
+    "/advisories/{advisoryId}": {
+      "entity": "advisories",
+      "rules": {
+        "read": "request.auth != null",
+        "write": "request.auth != null && request.resource.data.userId == request.auth.uid"
+      }
+    }
+  }
+}

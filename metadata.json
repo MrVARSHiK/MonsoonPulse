@@ -1,0 +1,6 @@
+{
+  "name": "MonsoonPulse",
+  "description": "Hyperlocal Monsoon Onset & Break Prediction and Agronomic Advisory System for Indian Kharif farmers (SIH 26086 / MoES / NCMRWF)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
