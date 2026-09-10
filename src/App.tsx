@@ -26,7 +26,8 @@ import { FirstTimeGuideModal } from './components/FirstTimeGuideModal';
 import { GoogleAuthModal } from './components/GoogleAuthModal';
 import { LanguageSettingsModal } from './components/LanguageSettingsModal';
 import { JudgeModeModal } from './components/JudgeModeModal';
-import { Award } from 'lucide-react';
+import { KisanVoiceAssistantModal } from './components/KisanVoiceAssistantModal';
+import { Award, Mic } from 'lucide-react';
 import { auth, db, doc, getDoc, onAuthStateChanged, firebaseSignOut } from './lib/firebase';
 
 export default function App() {
@@ -67,6 +68,7 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<'phone' | 'email' | 'google'>('phone');
   const [isJudgeModeOpen, setIsJudgeModeOpen] = useState(false);
+  const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
 
   const handleOpenAuth = (tab: 'phone' | 'email' | 'google' = 'phone') => {
     setAuthModalTab(tab);
@@ -257,6 +259,7 @@ export default function App() {
         onOpenAuth={() => handleOpenAuth(currentUser ? 'phone' : 'phone')}
         onOpenLanguageModal={() => setIsLanguageModalOpen(true)}
         onOpenJudgeMode={() => setIsJudgeModeOpen(true)}
+        onOpenVoiceAssistant={() => setIsVoiceAssistantOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -325,6 +328,7 @@ export default function App() {
             onSelectBlockId={handleSelectBlock}
             forecasts={forecasts}
             language={language}
+            onOpenVoiceAssistant={() => setIsVoiceAssistantOpen(true)}
           />
         )}
 
@@ -340,6 +344,7 @@ export default function App() {
             onOpenAuthModal={() => handleOpenAuth('phone')}
             onUpdateUser={handleLogin}
             onNavigateToAdvisory={() => setCurrentView('advisory')}
+            onOpenVoiceAssistant={() => setIsVoiceAssistantOpen(true)}
           />
         )}
 
@@ -428,6 +433,42 @@ export default function App() {
           setCurrentView(view);
         }}
       />
+
+      {/* Kisan Voice Assistant Modal (Hindi, Telugu, Marathi, English) */}
+      <KisanVoiceAssistantModal
+        isOpen={isVoiceAssistantOpen}
+        onClose={() => setIsVoiceAssistantOpen(false)}
+        block={activeBlock}
+        forecast={activeForecast}
+        cropId="soybean"
+        initialLanguage={language}
+      />
+
+      {/* Floating Quick Trigger for Kisan Voice Assistant */}
+      <div className="fixed bottom-4 left-4 z-40">
+        <button
+          id="floating-voice-assistant-btn"
+          onClick={() => setIsVoiceAssistantOpen(true)}
+          className="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-bold px-3.5 sm:px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 text-xs border border-emerald-400/40 transition-all transform hover:scale-105 active:scale-95 ring-2 ring-emerald-500/30 cursor-pointer"
+          title="Open Kisan Voice Assistant (Hindi & Telugu Voice)"
+        >
+          <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+            <Mic className="w-3.5 h-3.5 text-white animate-pulse" />
+          </div>
+          <span className="font-extrabold tracking-wide">
+            {language === 'hi'
+              ? 'किसान आवाज़ (Voice)'
+              : language === 'te'
+              ? 'కిసాన్ వాయిస్ (Voice)'
+              : language === 'mr'
+              ? 'शेतकरी व्हॉईस'
+              : 'Kisan Voice Assistant'}
+          </span>
+          <span className="bg-emerald-950/80 text-emerald-200 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase hidden sm:inline border border-emerald-500/30">
+            हिन्दी • తెలుగు
+          </span>
+        </button>
+      </div>
 
       {/* Floating Quick Trigger for Judges & Evaluators */}
       <div className="fixed bottom-4 right-4 z-40">

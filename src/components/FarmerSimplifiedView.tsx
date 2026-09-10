@@ -12,6 +12,7 @@ import { STATE_DISTRICT_LOOKUP, DISTRICT_BLOCK_LOOKUP, getCropsForState, getSubd
 import { generateCropAdvisory } from '../models/cropAdvisoryEngine';
 import { TRANSLATIONS } from '../data/translations';
 import { SUPPORTED_LANGUAGES, getLanguageMeta } from '../data/languages';
+import { speechService } from '../utils/speechService';
 import { 
   Smartphone, 
   Send, 
@@ -35,7 +36,8 @@ import {
   Database,
   AlertCircle,
   Sprout,
-  ArrowUpRight
+  ArrowUpRight,
+  Mic
 } from 'lucide-react';
 import { soundFx } from '../utils/soundFx';
 
@@ -50,6 +52,7 @@ interface FarmerSimplifiedViewProps {
   onOpenAuthModal?: () => void;
   onUpdateUser?: (user: AuthUser) => void;
   onNavigateToAdvisory?: () => void;
+  onOpenVoiceAssistant?: () => void;
 }
 
 export const FarmerSimplifiedView: React.FC<FarmerSimplifiedViewProps> = ({
@@ -61,7 +64,8 @@ export const FarmerSimplifiedView: React.FC<FarmerSimplifiedViewProps> = ({
   currentUser,
   onOpenAuthModal,
   onUpdateUser,
-  onNavigateToAdvisory
+  onNavigateToAdvisory,
+  onOpenVoiceAssistant
 }) => {
   const [selectedCropId, setSelectedCropId] = useState<CropId>('cotton');
   const [phoneNumber, setPhoneNumber] = useState<string>(() => {
@@ -186,41 +190,21 @@ export const FarmerSimplifiedView: React.FC<FarmerSimplifiedViewProps> = ({
   };
 
   const handleSpeakAudio = () => {
-    if ('speechSynthesis' in window) {
-      if (isSpeaking) {
-        window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-        return;
-      }
-
-      const fullText = getLocalizedSmsText();
-      const utterance = new SpeechSynthesisUtterance(fullText);
-      utterance.rate = speechRate;
-      
-      const speechLangMap: Record<string, string> = {
-        hi: 'hi-IN',
-        mr: 'mr-IN',
-        mr_local: 'mr-IN',
-        te: 'te-IN',
-        kn: 'kn-IN',
-        gu: 'gu-IN',
-        ta: 'ta-IN',
-        bn: 'bn-IN',
-        pa: 'pa-IN',
-        or: 'or-IN',
-        ml: 'ml-IN',
-        ur: 'ur-IN',
-        as: 'as-IN',
-        en: 'en-IN'
-      };
-      utterance.lang = speechLangMap[currentDeliveryLang] || 'en-IN';
-
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-
-      setIsSpeaking(true);
-      window.speechSynthesis.speak(utterance);
+    if (isSpeaking) {
+      speechService.stop();
+      setIsSpeaking(false);
+      return;
     }
+
+    const fullText = getLocalizedSmsText();
+    speechService.speak({
+      text: fullText,
+      language: currentDeliveryLang,
+      speed: speechRate,
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false)
+    });
   };
 
   const getTrafficVisual = () => {
@@ -606,6 +590,29 @@ export const FarmerSimplifiedView: React.FC<FarmerSimplifiedViewProps> = ({
 
           {/* Audio Spoken Button and Speech Rate controls */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            {onOpenVoiceAssistant && (
+              <button
+                id="farmer-open-voice-modal-btn"
+                onClick={onOpenVoiceAssistant}
+                className="w-full sm:w-auto py-3 px-5 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg transition text-sm sm:text-base bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/60 border border-emerald-400/50 cursor-pointer"
+                title="Open Live Kisan Voice Assistant (Hindi & Telugu)"
+              >
+                <Mic className="w-5 h-5 animate-pulse" />
+                <span>
+                  {language === 'hi'
+                    ? 'किसान आवाज़ सहायक'
+                    : language === 'te'
+                    ? 'కిసాన్ వాయిస్ అసిస్టెంట్'
+                    : language === 'mr'
+                    ? 'शेतकरी व्हॉईस असिस्टंट'
+                    : 'Kisan Voice Assistant'}
+                </span>
+                <span className="bg-emerald-800 text-emerald-200 text-[10px] px-1.5 py-0.5 rounded font-mono">
+                  🎙️ AI
+                </span>
+              </button>
+            )}
+
             <button
               id="voice-advisory-button"
               onClick={handleSpeakAudio}

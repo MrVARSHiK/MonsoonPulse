@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Send, Bot, Key, AlertCircle, RefreshCw, Volume2, Copy, Check, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Sparkles, Send, Bot, Key, AlertCircle, RefreshCw, Volume2, Copy, Check, ChevronRight, Mic, MicOff, Radio } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { BlockInfo, CropGrowthStage, CropId, Language, ProbabilisticForecast } from '../types';
 import { CROPS } from '../data/climatologyData';
@@ -10,6 +10,7 @@ interface GeminiAgronomistCardProps {
   stage: CropGrowthStage;
   forecast: ProbabilisticForecast;
   language: Language;
+  onOpenVoiceAssistant?: () => void;
 }
 
 export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
@@ -17,7 +18,8 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
   cropId,
   stage,
   forecast,
-  language
+  language,
+  onOpenVoiceAssistant
 }) => {
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,8 +27,22 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
   const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
   const [copied, setCopied] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
+  const recognitionRef = useRef<any>(null);
   const crop = CROPS[cropId] || CROPS['cotton'];
+
+  // Language mapping for speech recognition and synthesis
+  const speechLangMap: Record<string, string> = {
+    hi: 'hi-IN',
+    te: 'te-IN',
+    mr: 'mr-IN',
+    kn: 'kn-IN',
+    gu: 'gu-IN',
+    ta: 'ta-IN',
+    bn: 'bn-IN',
+    en: 'en-IN'
+  };
 
   // Check Gemini status on mount
   useEffect(() => {
@@ -38,6 +54,19 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
       .catch(() => {
         setIsConfigured(false);
       });
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {
+          // ignore
+        }
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
 
   const handleAsk = async (queryText?: string) => {
@@ -77,6 +106,65 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
     }
   };
 
+  // Speech Recognition
+  const handleToggleVoiceInput = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert(
+        language === 'hi'
+          ? 'आपके ब्राउज़र में आवाज़ पहचान उपलब्ध नहीं है।'
+          : language === 'te'
+          ? 'మీ బ్రౌజర్‌లో వాయిస్ రికగ్నిషన్ అందుబాటులో లేదు.'
+          : 'Voice recognition is not supported in your browser.'
+      );
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = speechLangMap[language] || 'hi-IN';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const spoken = event.results[0][0].transcript;
+        if (spoken) {
+          setQuestion(spoken);
+          handleAsk(spoken);
+        }
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch {
+      setIsListening(false);
+    }
+  };
+
   const handleCopy = () => {
     if (!response) return;
     navigator.clipboard.writeText(response);
@@ -91,7 +179,23 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
       setIsSpeaking(false);
       return;
     }
-    const utterance = new SpeechSynthesisUtterance(response.replace(/[#*`_]/g, ''));
+    const cleanText = response.replace(/[#*`_~]/g, '').trim();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = speechLangMap[language] || 'en-IN';
+
+    // Select regional voice if available in browser
+    const voices = window.speechSynthesis.getVoices();
+    const target = utterance.lang.toLowerCase();
+    const prefix = target.split('-')[0];
+    const matchedVoice = voices.find(v => 
+      v.lang.toLowerCase() === target || 
+      v.lang.toLowerCase().replace('_', '-') === target ||
+      v.lang.toLowerCase().startsWith(prefix)
+    );
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+    }
+
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
@@ -102,17 +206,20 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
     {
       en: `Can I sow ${crop.name} if rain is delayed by ${forecast.onsetDelayShiftDays} days?`,
       mr: `पाऊस ${forecast.onsetDelayShiftDays} दिवस लांबल्यास ${crop.nameMr} ची पेरणी करावी का?`,
-      hi: `यदि मानसून ${forecast.onsetDelayShiftDays} दिन की देरी से है तो क्या ${crop.nameHi} बोएं?`
+      hi: `यदि मानसून ${forecast.onsetDelayShiftDays} दिन की देरी से है तो क्या ${crop.nameHi} बोएं?`,
+      te: `వర్షం ${forecast.onsetDelayShiftDays} రోజులు ఆలస్యమైతే ${crop.name} విత్తవచ్చా?`
     },
     {
       en: `How to protect seedlings if break-phase lasts 7+ days?`,
       mr: `पावसाचा खंड ७ दिवसांपेक्षा जास्त पडल्यास रोपे कशी वाचवावी?`,
-      hi: `7+ दिनों का सूखा पड़ने पर अंकुरित पौधों की रक्षा कैसे करें?`
+      hi: `7+ दिनों का सूखा पड़ने पर अंकुरित पौधों की रक्षा कैसे करें?`,
+      te: `7 రోజులకు పైగా వర్షాభావం/విరామం వస్తే మొలకలను ఎలా కాపాడాలి?`
     },
     {
       en: `Is Broad Bed Furrow (BBF) recommended for my ${block.climatology.soilType}?`,
       mr: `${block.climatology.soilType} जमिनीसाठी बीबीएफ (BBF) फायदेशीर ठरेल का?`,
-      hi: `${block.climatology.soilType} मिट्टी के लिए क्या बीबीएफ पद्धति उपयुक्त है?`
+      hi: `${block.climatology.soilType} मिट्टी के लिए क्या बीबीएफ पद्धति उपयुक्त है?`,
+      te: `మా ${block.climatology.soilType} నేలకు బ్రాడ్ బెడ్ ఫర్రో (BBF) పద్ధతి అనుకూలమా?`
     }
   ];
 
@@ -139,19 +246,33 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
           </div>
         </div>
 
-        {/* API Key Status Badge */}
-        <div className="flex items-center gap-1.5 text-xs">
-          {isConfigured === true ? (
-            <span className="flex items-center gap-1.5 text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1 rounded-lg font-mono text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              API Key Active
-            </span>
-          ) : (
-            <div className="flex items-center gap-1 text-amber-300 bg-amber-950/40 border border-amber-800/60 px-2.5 py-1 rounded-lg text-[11px]">
-              <Key className="w-3 h-3 text-amber-400" />
-              <span>AI Studio Secrets: Add GEMINI_API_KEY</span>
-            </div>
+        {/* Top actions: Voice Assistant trigger & API Key Status */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {onOpenVoiceAssistant && (
+            <button
+              onClick={onOpenVoiceAssistant}
+              className="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              title="Open Full Voice Assistant (Hindi & Telugu)"
+            >
+              <Mic className="w-3.5 h-3.5 animate-pulse text-emerald-400" />
+              <span>Voice Assistant (किसाన్ / किसान)</span>
+            </button>
           )}
+
+          {/* API Key Status Badge */}
+          <div className="flex items-center gap-1.5 text-xs">
+            {isConfigured === true ? (
+              <span className="flex items-center gap-1.5 text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1 rounded-lg font-mono text-[11px]">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                API Key Active
+              </span>
+            ) : (
+              <div className="flex items-center gap-1 text-amber-300 bg-amber-950/40 border border-amber-800/60 px-2.5 py-1 rounded-lg text-[11px]">
+                <Key className="w-3 h-3 text-amber-400" />
+                <span>AI Studio Secrets: Add GEMINI_API_KEY</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -171,11 +292,11 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
 
       {/* Action / Query Row */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => handleAsk('')}
             disabled={loading}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2 shadow-md transition shrink-0"
+            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2 shadow-md transition shrink-0 cursor-pointer"
           >
             {loading ? (
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -185,14 +306,26 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
             <span>Generate Deep AI Strategy ({crop.name})</span>
           </button>
 
+          {onOpenVoiceAssistant && (
+            <button
+              onClick={onOpenVoiceAssistant}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 shadow-md transition cursor-pointer"
+            >
+              <Mic className="w-3.5 h-3.5" />
+              <span>
+                {language === 'hi' ? 'बोलकर पूछें (Voice)' : language === 'te' ? 'మాట్లాడి అడగండి (Voice)' : 'Ask with Voice'}
+              </span>
+            </button>
+          )}
+
           <span className="text-xs text-slate-500 font-medium">or ask a specific question below</span>
         </div>
 
-        {/* Quick Sample Questions */}
+        {/* Quick Sample Questions with Hindi & Telugu & Marathi */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] text-slate-400">Quick Prompts:</span>
           {sampleQuestions.map((sq, i) => {
-            const promptText = (language === 'mr' && sq.mr) || (language === 'hi' && sq.hi) || sq.en;
+            const promptText = (language === 'mr' && sq.mr) || (language === 'hi' && sq.hi) || (language === 'te' && sq.te) || sq.en;
             return (
               <button
                 key={i}
@@ -201,7 +334,7 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
                   handleAsk(promptText);
                 }}
                 disabled={loading}
-                className="text-[11px] bg-[#0F172A] hover:bg-slate-800 text-slate-300 border border-slate-700/80 px-2.5 py-1 rounded-md transition flex items-center gap-1 text-left"
+                className="text-[11px] bg-[#0F172A] hover:bg-slate-800 text-slate-300 border border-slate-700/80 px-2.5 py-1 rounded-md transition flex items-center gap-1 text-left cursor-pointer"
               >
                 <span>{promptText}</span>
                 <ChevronRight className="w-3 h-3 text-indigo-400" />
@@ -210,7 +343,7 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
           })}
         </div>
 
-        {/* Input box */}
+        {/* Input box with Voice Recognition Mic button */}
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -221,21 +354,54 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
                 handleAsk();
               }
             }}
-            placeholder={`Ask Gemini about ${crop.name} in ${block.name} (e.g. soil moisture, break spell, irrigation)...`}
+            placeholder={
+              language === 'hi'
+                ? `पूछें: ${crop.nameHi || crop.name} बुवाई, बारिश या नमी के बारे में...`
+                : language === 'te'
+                ? `అడగండి: ${crop.name} విత్తడం, వర్షం లేదా నేల తేమ గురించి...`
+                : `Ask Gemini about ${crop.name} in ${block.name} (e.g. soil moisture, break spell, irrigation)...`
+            }
             className="bg-[#0F172A] border border-slate-700 text-slate-200 text-xs px-3.5 py-2 rounded-lg flex-1 focus:outline-none focus:border-indigo-500 placeholder:text-slate-500"
           />
+
+          {/* Voice Input Button */}
+          <button
+            onClick={handleToggleVoiceInput}
+            className={`p-2 rounded-lg transition border cursor-pointer ${
+              isListening
+                ? 'bg-rose-600 text-white border-rose-500 animate-pulse'
+                : 'bg-slate-800 hover:bg-slate-700 text-emerald-400 border-slate-700'
+            }`}
+            title={isListening ? 'Listening... click to stop' : 'Click to speak question'}
+          >
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
+
           <button
             onClick={() => handleAsk()}
             disabled={loading || !question.trim()}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white p-2 rounded-lg transition"
+            className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white p-2 rounded-lg transition cursor-pointer"
             title="Ask Gemini"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {isListening && (
+          <div className="text-[11px] text-emerald-400 flex items-center gap-1.5 animate-pulse bg-emerald-950/40 px-3 py-1 rounded-lg border border-emerald-500/30">
+            <Radio className="w-3 h-3 text-emerald-400 animate-ping" />
+            <span>
+              {language === 'hi' 
+                ? 'सुन रहे हैं... कृपया अपना प्रश्न बोलें' 
+                : language === 'te' 
+                ? 'వింటున్నాము... దయచేసి మాట్లాడండి' 
+                : 'Listening... speak your question now'}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Response Box */}
+      {/* Response Box with Multilingual Audio */}
       {response && (
         <div className="bg-[#0F172A] border border-indigo-900/80 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-800 text-xs text-slate-400">
@@ -246,14 +412,17 @@ export const GeminiAgronomistCard: React.FC<GeminiAgronomistCardProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleSpeak}
-                className="hover:text-slate-200 transition p-1"
-                title="Listen to advice"
+                className={`transition p-1 flex items-center gap-1 text-[11px] rounded px-2 py-0.5 cursor-pointer ${
+                  isSpeaking ? 'bg-rose-600 text-white animate-pulse' : 'hover:text-slate-200 bg-slate-800 text-indigo-300'
+                }`}
+                title="Listen to advice in active language"
               >
-                <Volume2 className={`w-3.5 h-3.5 ${isSpeaking ? 'text-indigo-400 animate-pulse' : ''}`} />
+                <Volume2 className="w-3.5 h-3.5" />
+                <span>{isSpeaking ? 'Stop' : 'Listen'}</span>
               </button>
               <button
                 onClick={handleCopy}
-                className="hover:text-slate-200 transition p-1 flex items-center gap-1 text-[11px]"
+                className="hover:text-slate-200 transition p-1 flex items-center gap-1 text-[11px] cursor-pointer"
                 title="Copy advice"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}

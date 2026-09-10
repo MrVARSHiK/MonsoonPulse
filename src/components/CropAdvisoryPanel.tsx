@@ -12,6 +12,7 @@ import { generateCropAdvisory } from '../models/cropAdvisoryEngine';
 import { TRANSLATIONS } from '../data/translations';
 import { ModelVsNaiveRuleCard } from './ModelVsNaiveRuleCard';
 import { GeminiAgronomistCard } from './GeminiAgronomistCard';
+import { speechService } from '../utils/speechService';
 import { 
   Sprout, 
   CheckCircle2, 
@@ -31,7 +32,8 @@ import {
   TrendingDown,
   ClipboardCheck,
   CheckSquare,
-  Square
+  Square,
+  Mic
 } from 'lucide-react';
 
 interface CropAdvisoryPanelProps {
@@ -39,13 +41,15 @@ interface CropAdvisoryPanelProps {
   onSelectBlockId: (id: string) => void;
   forecasts: Record<string, ProbabilisticForecast>;
   language: Language;
+  onOpenVoiceAssistant?: () => void;
 }
 
 export const CropAdvisoryPanel: React.FC<CropAdvisoryPanelProps> = ({
   selectedBlockId,
   onSelectBlockId,
   forecasts,
-  language
+  language,
+  onOpenVoiceAssistant
 }) => {
   const [selectedCropId, setSelectedCropId] = useState<CropId>('cotton');
   const [selectedStage, setSelectedStage] = useState<CropGrowthStage>('sowing_window');
@@ -144,44 +148,26 @@ export const CropAdvisoryPanel: React.FC<CropAdvisoryPanelProps> = ({
 
   // Text-to-Speech audio synthesis for accessibility
   const handleSpeak = () => {
-    if ('speechSynthesis' in window) {
-      if (isSpeaking) {
-        window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-        return;
-      }
-      
-      const headline = advisory.headline[language] || advisory.headline.en;
-      const s1 = advisory.simpleSentences.todayAdvice[language] || advisory.simpleSentences.todayAdvice.en;
-      const s2 = advisory.simpleSentences.waterAdvice[language] || advisory.simpleSentences.waterAdvice.en;
-      const s3 = advisory.simpleSentences.seedAdvice[language] || advisory.simpleSentences.seedAdvice.en;
-      const s4 = advisory.simpleSentences.sowingRule[language] || advisory.simpleSentences.sowingRule.en;
-
-      const utterance = new SpeechSynthesisUtterance(`${headline}. ${s1}. ${s2}. ${s3}. ${s4}.`);
-      const speechLangMap: Record<string, string> = {
-        hi: 'hi-IN',
-        mr: 'mr-IN',
-        mr_local: 'mr-IN',
-        te: 'te-IN',
-        kn: 'kn-IN',
-        gu: 'gu-IN',
-        ta: 'ta-IN',
-        bn: 'bn-IN',
-        pa: 'pa-IN',
-        or: 'or-IN',
-        ml: 'ml-IN',
-        ur: 'ur-IN',
-        as: 'as-IN',
-        en: 'en-IN'
-      };
-      utterance.lang = speechLangMap[language] || 'en-IN';
-      
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      
-      setIsSpeaking(true);
-      window.speechSynthesis.speak(utterance);
+    if (isSpeaking) {
+      speechService.stop();
+      setIsSpeaking(false);
+      return;
     }
+    
+    const headline = advisory.headline[language] || advisory.headline.en;
+    const s1 = advisory.simpleSentences.todayAdvice[language] || advisory.simpleSentences.todayAdvice.en;
+    const s2 = advisory.simpleSentences.waterAdvice[language] || advisory.simpleSentences.waterAdvice.en;
+    const s3 = advisory.simpleSentences.seedAdvice[language] || advisory.simpleSentences.seedAdvice.en;
+    const s4 = advisory.simpleSentences.sowingRule[language] || advisory.simpleSentences.sowingRule.en;
+
+    const fullText = `${headline}. ${s1}. ${s2}. ${s3}. ${s4}.`;
+    speechService.speak({
+      text: fullText,
+      language,
+      onStart: () => setIsSpeaking(true),
+      onEnd: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false)
+    });
   };
 
   const getTrafficBadge = () => {
@@ -574,6 +560,26 @@ export const CropAdvisoryPanel: React.FC<CropAdvisoryPanelProps> = ({
 
           {/* Audio Readout & Action Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
+            {onOpenVoiceAssistant && (
+              <button
+                id="panel-open-voice-assistant-btn"
+                onClick={onOpenVoiceAssistant}
+                className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400/50 flex items-center gap-1.5 text-xs font-bold transition shadow-md cursor-pointer"
+                title="Open Kisan Voice Assistant (Hindi & Telugu)"
+              >
+                <Mic className="w-4 h-4 text-white animate-pulse" />
+                <span>
+                  {language === 'hi' 
+                    ? 'किसान आवाज़ (Voice)' 
+                    : language === 'te' 
+                    ? 'కిసాన్ వాయిస్ (Voice)' 
+                    : language === 'mr' 
+                    ? 'शेतकरी व्हॉईस' 
+                    : 'Kisan Voice Assistant'}
+                </span>
+              </button>
+            )}
+
             <button
               id="listen-advisory-btn"
               onClick={handleSpeak}
@@ -847,6 +853,7 @@ export const CropAdvisoryPanel: React.FC<CropAdvisoryPanelProps> = ({
         stage={selectedStage}
         forecast={forecast}
         language={language}
+        onOpenVoiceAssistant={onOpenVoiceAssistant}
       />
 
       {/* Model vs Naive Rule Benchmark Card (Evaluator Scorecard Defense) */}

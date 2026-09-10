@@ -17,7 +17,8 @@ import {
   BookOpen,
   Volume2,
   VolumeX,
-  Award
+  Award,
+  Mic
 } from 'lucide-react';
 import { DistrictInfo, HistoricalScenario, Language, AuthUser } from '../types';
 import { DISTRICTS, STATES } from '../data/climatologyData';
@@ -42,6 +43,7 @@ interface NavbarProps {
   onOpenAuth: () => void;
   onOpenLanguageModal?: () => void;
   onOpenJudgeMode?: () => void;
+  onOpenVoiceAssistant?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -58,7 +60,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onOpenAuth,
   onOpenLanguageModal,
-  onOpenJudgeMode
+  onOpenJudgeMode,
+  onOpenVoiceAssistant
 }) => {
   const t = TRANSLATIONS[language];
   const [isMuted, setIsMuted] = React.useState<boolean>(() => soundFx.isMuted());
@@ -199,6 +202,25 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <HelpCircle className="w-3 h-3 text-indigo-400" /> 
             <span className={language !== 'en' ? 'font-devanagari' : ''}>{t.systemSpecsBtn}</span>
+          </button>
+
+          {/* Voice Assistant Button (Hindi / Telugu / Regional) */}
+          <button
+            id="navbar-voice-assistant-btn"
+            onClick={() => {
+              soundFx.playClick();
+              if (onOpenVoiceAssistant) onOpenVoiceAssistant();
+            }}
+            className="text-xs text-emerald-300 hover:text-white flex items-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-600 px-2.5 py-0.5 rounded border border-emerald-500/40 transition font-bold cursor-pointer"
+            title="Open Kisan Voice Assistant (Hindi, Telugu, Marathi, English)"
+          >
+            <Mic className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+            <span className="hidden md:inline">
+              {language === 'hi' ? 'किसान वाणी' : language === 'te' ? 'కిసాన్ వాయిస్' : 'Voice Assistant'}
+            </span>
+            <span className="text-[10px] bg-emerald-950/80 px-1 rounded text-emerald-200 border border-emerald-500/30">
+              🎙️
+            </span>
           </button>
           
           {/* User Sign-In / User Profile Button */}

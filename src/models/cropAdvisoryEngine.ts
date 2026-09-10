@@ -46,23 +46,39 @@ export function generateCropAdvisory(
   const headlines = {
     PROCEED: {
       en: `Favorable Sowing Window: Proceed with ${crop.name} sowing in ${block.name}. Soil moisture optimal.`,
-      mr: `पेरणीसाठी अनुकूल वातावरण: ${block.nameMr} येथे ${crop.nameMr} ची पेरणी करण्यास हरकत नाही. जमिनीत पुरेसा ओलावा आहे.`,
-      hi: `बुवाई के लिए अनुकूल मौसम: ${block.nameHi} में ${crop.nameHi} की बुवाई शुरू करें। मिट्टी में पर्याप्त नमी उपलब्ध है।`
+      mr: `पेरणीसाठी अनुकूल वातावरण: ${block.nameMr || block.name} येथे ${crop.nameMr || crop.name} ची पेरणी करण्यास हरकत नाही. जमिनीत पुरेसा ओलावा आहे.`,
+      hi: `बुवाई के लिए अनुकूल मौसम: ${block.nameHi || block.name} में ${crop.nameHi || crop.name} की बुवाई शुरू करें। मिट्टी में पर्याप्त नमी उपलब्ध है।`,
+      te: `విత్తడానికి అనుకూల వాతావరణం: ${block.name} లో ${crop.name} విత్తనాలు వేయడానికి సమయం అనుకూలంగా ఉంది. నేలలో తగినంత తేమ ఉంది.`,
+      kn: `ಬಿತ್ತನೆಗೆ ಅನುಕೂಲಕರ ಹವಾಮಾನ: ${block.name} ನಲ್ಲಿ ${crop.name} ಬಿತ್ತನೆ ಆರಂಭಿಸಿ. ಮಣ್ಣಿನಲ್ಲಿ ಸಾಕಷ್ಟು ತೇವಾಂಶವಿದೆ.`,
+      gu: `વાવણી માટે સાનુકૂળ વાતાવરણ: ${block.name} માં ${crop.name} ની વાવણી શરૂ કરો. જમીનમાં પૂરતો ભેજ છે.`,
+      ta: `விதைப்புக்கு உகந்த சூழல்: ${block.name} பகுதியில் ${crop.name} விதைப்பைத் தொடங்கலாம். மண்ணில் போதுமான ஈரம் உள்ளது.`
     },
     CAUTION_IRRIGATE: {
       en: `Caution Alert: Moderate dry spell risk (${breakRiskPct}%). Prepare supplemental irrigation or Broad Bed Furrow for ${crop.name}.`,
-      mr: `सतर्कता इशारा: मध्यम पावसाचा खंड संभव (${breakRiskPct}%). ${crop.nameMr} साठी बीबीएफ (BBF) किंवा संरक्षित पाण्याची सोय ठेवा.`,
-      hi: `सतर्कता सलाह: मध्यम सूखा जोखिम (${breakRiskPct}%)। ${crop.nameHi} के लिए बीबीएफ या संरक्षित सिंचाई की व्यवस्था रखें।`
+      mr: `सतर्कता इशारा: मध्यम पावसाचा खंड संभव (${breakRiskPct}%). ${crop.nameMr || crop.name} साठी बीबीएफ (BBF) किंवा संरक्षित पाण्याची सोय ठेवा.`,
+      hi: `सतर्कता सलाह: मध्यम सूखा जोखिम (${breakRiskPct}%)। ${crop.nameHi || crop.name} के लिए बीबीएफ या संरक्षित सिंचाई की व्यवस्था रखें।`,
+      te: `జాగ్రత్త హెచ్చరిక: మోస్తరు వర్షపు విరామ ముప్పు (${breakRiskPct}%). ${crop.name} కొరకు బ్రాడ్ బెడ్ ఫర్రో లేదా రక్షక నీటిని సిద్ధం చేసుకోండి.`,
+      kn: `ಎಚ್ಚರಿಕೆ ಸಂದೇಶ: ಸಾಧಾರಣ ಮಳೆ ಕೊರತೆಯ ಅಪಾಯ (${breakRiskPct}%). ${crop.name} ಗೆ ತುರ್ತು ನೀರಾವರಿ ಅಥವಾ ಅಗಲ ಮಡಿ ಸಾಲು (BBF) ಸಿದ್ಧಪಡಿಸಿ.`,
+      gu: `સાવચેતી સૂચના: મધ્યમ વરસાદ ખેંચાવાનું જોખમ (${breakRiskPct}%). ${crop.name} માટે બીબીએફ પદ્ધતિ અથવા રક્ષણાત્મક પિયત તૈયાર રાખો.`,
+      ta: `எச்சரிக்கை: மிதமான மழை இடைவெளி அபாயம் (${breakRiskPct}%). ${crop.name} பயிருக்கு கூடுதல் பாசனம் அல்லது அகலப்பாத்தி முறைக்கு தயாராகுங்கள்.`
     },
     DELAY_SOWING: {
       en: `Critical Alert: High dry spell risk (${breakRiskPct}% / ~${breakDurationExpectedDays} days). Delay ${crop.name} sowing by 7-10 days to avoid seedling mortality.`,
-      mr: `अतिसतर्कता इशारा: पावसाचा मोठा खंड संभव (${breakRiskPct}% / ~${breakDurationExpectedDays} दिवस). कोमेजणे टाळण्यासाठी ${crop.nameMr} ची पेरणी ७-१० दिवस पुढे ढकला.`,
-      hi: `गंभीर चेतावनी: लंबे सूखे की उच्च संभावना (${breakRiskPct}% / ~${breakDurationExpectedDays} दिन)। अंकुरण नुकसान से बचने के लिए ${crop.nameHi} की बुवाई 7-10 दिन टालें।`
+      mr: `अतिसतर्कता इशारा: पावसाचा मोठा खंड संभव (${breakRiskPct}% / ~${breakDurationExpectedDays} दिवस). कोमेजणे टाळण्यासाठी ${crop.nameMr || crop.name} ची पेरणी ७-१० दिवस पुढे ढकला.`,
+      hi: `गंभीर चेतावनी: लंबे सूखे की उच्च संभावना (${breakRiskPct}% / ~${breakDurationExpectedDays} दिन)। अंकुरण नुकसान से बचने के लिए ${crop.nameHi || crop.name} की बुवाई 7-10 दिन टालें।`,
+      te: `తీవ్ర హెచ్చరిక: వర్షపు విరామ ముప్పు ఎక్కువ (${breakRiskPct}% / ~${breakDurationExpectedDays} రోజులు). మొలకలు ఎండిపోకుండా ఉండటానికి ${crop.name} విత్తడం 7-10 రోజులు వాయిదా వేయండి.`,
+      kn: `ತೀವ್ರ ಎಚ್ಚರಿಕೆ: ದೀರ್ಘ ಮಳೆ ಕೊರತೆಯ ಅಪಾಯ (${breakRiskPct}% / ~${breakDurationExpectedDays} ದಿನಗಳು). ಮೊಳಕೆ ಒಣಗುವುದನ್ನು ತಪ್ಪಿಸಲು ${crop.name} ಬಿತ್ತನೆಯನ್ನು 7-10 ದಿನ ಮುಂದೂಡಿ.`,
+      gu: `ગંભીર ચેતવણી: લાંબા વરસાદ ખેંચાણનું જોખમ (${breakRiskPct}% / ~${breakDurationExpectedDays} દિવસ). અંકુરણ બગડતું અટકાવવા ${crop.name} ની વાવણી 7-10 દિવસ મુલતવી રાખો.`,
+      ta: `தீவிர எச்சரிக்கை: நீண்ட மழை இடைவெளி அபாயம் (${breakRiskPct}% / ~${breakDurationExpectedDays} நாட்கள்). பயிர் காய்ந்து போவதை தவிர்க்க ${crop.name} விதைப்பை 7-10 நாட்கள் தள்ளிப்போடுங்கள்.`
     },
     PROTECT_DRAIN: {
       en: `Excess Rain Warning: Heavy rainfall risk (${heavyRainRiskPct}%). Create drainage channels to prevent waterlogging in ${crop.name}.`,
-      mr: `अतिवृष्टी इशारा: जोरदार पावसाची शक्यता (${heavyRainRiskPct}%). ${crop.nameMr} पिकात पाणी साचू नये म्हणून निचरा चर काढा.`,
-      hi: `भारी बारिश की चेतावनी: तेज वर्षा का जोखिम (${heavyRainRiskPct}%)। ${crop.nameHi} में जलभराव रोकने के लिए जल निकासी नालियां बनाएं।`
+      mr: `अतिवृष्टी इशारा: जोरदार पावसाची शक्यता (${heavyRainRiskPct}%). ${crop.nameMr || crop.name} पिकात पाणी साचू नये म्हणून निचरा चर काढा.`,
+      hi: `भारी बारिश की चेतावनी: तेज वर्षा का जोखिम (${heavyRainRiskPct}%)। ${crop.nameHi || crop.name} में जलभराव रोकने के लिए जल निकासी नालियां बनाएं।`,
+      te: `భారీ వర్ష హెచ్చరిక: అతి భారీ వర్ష సూచన (${heavyRainRiskPct}%). ${crop.name} పంటలో నీరు నిలవకుండా కాలువలు తీయండి.`,
+      kn: `ಭಾರಿ ಮಳೆಯ ಎಚ್ಚರಿಕೆ: ತೀವ್ರ ಮಳೆಯ ಅಪಾಯ (${heavyRainRiskPct}%). ${crop.name} ಹೊಲದಲ್ಲಿ ನೀರು ನಿಲ್ಲದಂತೆ ಕಾಲುವೆ ಮಾಡಿ.`,
+      gu: `ભારે વરસાદની ચેતવણી: ભારે વરસાદનું જોખમ (${heavyRainRiskPct}%). ${crop.name} ખેતરમાં પાણી ભરાતું રોકવા નિકાલ નિકાસ ચાસ બનાવો.`,
+      ta: `கனமழை எச்சரிக்கை: தீவிர மழை அபாயம் (${heavyRainRiskPct}%). ${crop.name} பயிரில் தண்ணீர் தேங்காமல் இருக்க வடிகால் அமையுங்கள்.`
     }
   };
 
@@ -89,7 +105,35 @@ export function generateCropAdvisory(
           ? `यदि सिंचाई की व्यवस्था है तभी बुवाई करें। आगे ~${breakDurationExpectedDays} दिनों का सूखा हो सकता है।`
           : verdictCode === 'PROTECT_DRAIN'
             ? `खेत में पानी निकासी की नाली बनाएं ताकि भारी बारिश से बीज न सड़े।`
-            : `आज ${crop.nameHi} की बुवाई करें! मिट्टी में पर्याप्त नमी है और मौसम बहुत अच्छा है।`
+            : `आज ${crop.nameHi} की बुवाई करें! मिट्टी में पर्याप्त नमी है और मौसम बहुत अच्छा है।`,
+      te: verdictCode === 'DELAY_SOWING'
+        ? `నేడు పొడి నేలలో విత్తవద్దు. వర్షం ${Math.max(1, Math.round(onsetDelayShiftDays))} రోజులు ఆలస్యమైంది. మంచి వర్షం కురిసే వరకు వేచి ఉండండి.`
+        : verdictCode === 'CAUTION_IRRIGATE'
+          ? `నీటి సదుపాయం సిద్ధంగా ఉంటేనే విత్తండి. రాబోయే రోజుల్లో వర్షం ఆగిపోయే సూచన ఉంది.`
+          : verdictCode === 'PROTECT_DRAIN'
+            ? `విత్తనాలు కుళ్ళిపోకుండా నేల నుండి అదనపు నీరు బయటకు పోయేలా కాలువలు తీయండి.`
+            : `నేడే విత్తనాలు వేయండి! నేలలో తగినంత తేమ మరియు వాతావరణం చాలా అనుకూలంగా ఉంది.`,
+      kn: verdictCode === 'DELAY_SOWING'
+        ? `ಇಂದು ಒಣ ಮಣ್ಣಿನಲ್ಲಿ ಬಿತ್ತನೆ ಮಾಡಬೇಡಿ. ಮಳೆ ${Math.max(1, Math.round(onsetDelayShiftDays))} ದಿನ ತಡವಾಗಿದೆ. ಉತ್ತಮ ಮಳೆಗಾಗಿ ಕಾಯಿರಿ.`
+        : verdictCode === 'CAUTION_IRRIGATE'
+          ? `ನೀರಿನ ವ್ಯವಸ್ಥೆ ಇದ್ದರೆ ಮಾತ್ರ ಬಿತ್ತನೆ ಮಾಡಿ. ಮುಂದೆ ಮಳೆ ವಿರಾಮ ಬರುವ ಸಾಧ್ಯತೆಯಿದೆ.`
+          : verdictCode === 'PROTECT_DRAIN'
+            ? `ಭಾರಿ ಮಳೆಯಿಂದ ಬೀಜ ಕೊಳೆಯದಂತೆ ತಡೆಯಲು ಹೊಲದಲ್ಲಿ ಕಾಲುವೆಗಳನ್ನು ಮಾಡಿ.`
+            : `ಇಂದೇ ಬಿತ್ತನೆ ಮಾಡಿ! ಮಣ್ಣಿನಲ್ಲಿ ಉತ್ತಮ ತೇವಾಂಶವಿದೆ.`,
+      gu: verdictCode === 'DELAY_SOWING'
+        ? `આજે સૂકી જમીનમાં વાવણી ન કરો. વરસાદ ${Math.max(1, Math.round(onsetDelayShiftDays))} દિવસ મોડો છે. સારા વરસાદની રાહ જુઓ.`
+        : verdictCode === 'CAUTION_IRRIGATE'
+          ? `જો સિંચાઈની સગવડ હોય તો જ વાવણી કરો.`
+          : verdictCode === 'PROTECT_DRAIN'
+            ? `ભારે વરસાદથી બિયારણ બગડે નહીં તે માટે પાણી નિકાલની વ્યવસ્થા કરો.`
+            : `આજે વાવણી કરો! જમીનમાં પૂરતો ભેજ છે.`,
+      ta: verdictCode === 'DELAY_SOWING'
+        ? `இன்று காய்ந்த மண்ணில் விதைக்காதீர்கள். மழை ${Math.max(1, Math.round(onsetDelayShiftDays))} நாட்கள் தாமதமாகிறது. நல்ல மழைக்காக காத்திருங்கள்.`
+        : verdictCode === 'CAUTION_IRRIGATE'
+          ? `பாசன வசதி இருந்தால் மட்டுமே விதையுங்கள்.`
+          : verdictCode === 'PROTECT_DRAIN'
+            ? `கனமழையினால் விதைகள் அழுகாமல் இருக்க வடிகால் அமையுங்கள்.`
+            : `இன்றே விதையுங்கள்! மண்ணில் நல்ல ஈரம் உள்ளது.`
     },
     waterAdvice: {
       en: verdictCode === 'PROTECT_DRAIN'
@@ -106,12 +150,30 @@ export function generateCropAdvisory(
         ? `खेत की नालियां खुली रखें ताकि अतिरिक्त पानी निकल जाए।`
         : verdictCode === 'DELAY_SOWING' || breakRiskPct > 40
           ? `खेत के तालाब में पानी संचित रखें, बोरवेल का पानी बचाएं।`
-          : `मिट्टी में भरपूर नमी है, अभी अतिरिक्त सिंचाई की आवश्यकता नहीं है।`
+          : `मिट्टी में भरपूर नमी है, अभी अतिरिक्त सिंचाई की आवश्यकता नहीं है।`,
+      te: verdictCode === 'PROTECT_DRAIN'
+        ? `అదనపు నీరు బయటకు పోయేలా కాలువలు శుభ్రంగా ఉంచండి.`
+        : verdictCode === 'DELAY_SOWING' || breakRiskPct > 40
+          ? `వ్యవసాయ కుంటలలో నీటిని నిల్వ చేసుకోండి, బోరుబావి నీటిని పొదుపుగా వాడండి.`
+          : `నేలలో తగినంత తేమ ఉంది, ఇప్పుడు అదనపు నీరు అవసరం లేదు.`,
+      kn: verdictCode === 'PROTECT_DRAIN'
+        ? `ಹೆಚ್ಚುವರಿ ನೀರು ಹರಿದುಹೋಗಲು ಕಾಲುವೆಗಳನ್ನು ತೆರೆದಿಡಿ.`
+        : `ಮಣ್ಣಿನಲ್ಲಿ ತೇವಾಂಶವಿದೆ, ಸದ್ಯಕ್ಕೆ ಹೆಚ್ಚಿನ ನೀರಾವರಿ ಬೇಡ.`,
+      gu: verdictCode === 'PROTECT_DRAIN'
+        ? `વધારાનું પાણી વહી જવા માટે નિકાલ ખુલ્લો રાખો.`
+        : `જમીનમાં પૂરતો ભેજ છે.`,
+      ta: verdictCode === 'PROTECT_DRAIN'
+        ? `அதிகப்படியான நீர் வடிய வடிகால்களை திறந்த நிலையில் வையுங்கள்.`
+        : `மண்ணில் போதுமான ஈரம் உள்ளது.`
     },
     seedAdvice: {
       en: `Treat seeds with bio-fertilizers or Trichoderma before planting to stop fungal root rot.`,
       mr: `पेरणीपूर्वी बियाण्याला ट्रायकोडर्मा किंवा बुरशीनाशक चोळा जेणेकरून रोग पडणार नाही.`,
-      hi: `बुवाई से पहले बीजों को ट्राइकोडर्मा या फफूंदनाशक से अवश्य उपचारित करें।`
+      hi: `बुवाई से पहले बीजों को ट्राइकोडर्मा या फफूंदनाशक से अवश्य उपचारित करें।`,
+      te: `విత్తే ముందు విత్తనాలకు ట్రైకోడెర్మా లేదా శిలీంద్రనాశినితో విత్తన శుద్ధి తప్పక చేయండి.`,
+      kn: `ಬಿತ್ತನೆಗೆ ಮುನ್ನ ಬೀಜಗಳಿಗೆ ಟ್ರೈಕೋಡರ್ಮಾ ಉಪಚಾರ ಮಾಡಿ.`,
+      gu: `વાવણી પહેલાં બીજને ટ્રાઈકોડર્માથી માવજત આપો.`,
+      ta: `விதைப்பதற்கு முன் விதைகளுக்கு டிரைக்கோடெர்மா கொண்டு விதை நேர்த்தி செய்யுங்கள்.`
     },
     sowingRule: {
       en: verdictCode === 'DELAY_SOWING' 
@@ -134,7 +196,23 @@ export function generateCropAdvisory(
           ? `🟡 पीली बत्ती: बीबीएफ विधि से बुवाई करें और पानी का इंतज़ाम रखें।`
           : verdictCode === 'PROTECT_DRAIN'
             ? `🟠 नारंगी बत्ती: बुवाई से पहले खेत में पानी भराव से बचाव करें।`
-            : `🟢 हरी बत्ती: तुरंत पूरे खेत में बुवाई करने के लिए सुरक्षित।`
+            : `🟢 हरी बत्ती: तुरंत पूरे खेत में बुवाई करने के लिए सुरक्षित।`,
+      te: verdictCode === 'DELAY_SOWING'
+        ? `🔴 ఎరుపు రంగు: ఆగండి! 75 మి.మీ వర్షం కురిసే వరకు తొందరపడి విత్తవద్దు.`
+        : verdictCode === 'CAUTION_IRRIGATE'
+          ? `🟡 పసుపు రంగు: బీబీఎఫ్ పద్ధతిలో విత్తి నీటిని సిద్ధం చేసుకోండి.`
+          : verdictCode === 'PROTECT_DRAIN'
+            ? `🟠 నారింజ రంగు: ముంపు రాకుండా రక్షణ చర్యలు తీసుకోండి.`
+            : `🟢 ఆకుపచ్చ రంగు: వెంటనే పూర్తి విస్తీర్ణంలో విత్తడం సురక్షితం.`,
+      kn: verdictCode === 'DELAY_SOWING'
+        ? `🔴 ಕೆಂಪು ದೀಪ: ನಿಲ್ಲಿ! 75 ಮಿ.ಮೀ ಮಳೆಯಾಗುವವರೆಗೆ ಬಿತ್ತಬೇಡಿ.`
+        : `🟢 ಹಸಿರು ದೀಪ: ಬಿತ್ತನೆಗೆ ಸುರಕ್ಷಿತ.`,
+      gu: verdictCode === 'DELAY_SOWING'
+        ? `🔴 લાલ રંગ: થોભો! 75 મીમી વરસાદ સુધી વાવણી ન કરો.`
+        : `🟢 લીલો રંગ: વાવણી માટે અનુકૂળ.`,
+      ta: verdictCode === 'DELAY_SOWING'
+        ? `🔴 சிவப்பு விளக்கு: நில்லுங்கள்! 75 மி.மீ மழை வரை விதைக்காதீர்கள்.`
+        : `🟢 பச்சை விளக்கு: விதைக்க பாதுகாப்பானது.`
     }
   };
 
@@ -266,11 +344,7 @@ export function generateCropAdvisory(
     blockName: block.name,
     verdictCode,
     trafficColor,
-    headline: {
-      en: headlines[verdictCode].en,
-      mr: headlines[verdictCode].mr,
-      hi: headlines[verdictCode].hi
-    },
+    headline: headlines[verdictCode],
     simpleSentences,
     reasoningChain,
     actionPlan,
